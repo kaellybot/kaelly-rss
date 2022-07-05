@@ -1,9 +1,15 @@
 package application
 
 import (
+	"errors"
+
 	amqp "github.com/kaellybot/kaelly-amqp"
 	"github.com/kaellybot/kaelly-rss/services/rss"
 	"github.com/rs/zerolog/log"
+)
+
+var (
+	ErrCannotInstanciateApp = errors.New("Cannot instanciate application")
 )
 
 type ApplicationInterface interface {
@@ -20,13 +26,13 @@ func New(rabbitMqClientId, rabbitMqAddress string, rssTimeout int) (*Application
 	broker, err := amqp.New(rabbitMqClientId, rabbitMqAddress, []amqp.Binding{})
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to instanciate broker")
-		return nil, err
+		return nil, ErrCannotInstanciateApp
 	}
 
 	rss, err := rss.New(broker, rssTimeout)
 	if err != nil {
 		log.Error().Err(err).Msgf("RSS service instanciation failed")
-		return nil, err
+		return nil, ErrCannotInstanciateApp
 	}
 
 	return &Application{rss: rss, broker: broker}, nil

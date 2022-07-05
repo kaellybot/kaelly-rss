@@ -39,28 +39,18 @@ func (service *RSSService) CheckFeeds() {
 		wg.Add(1)
 		go func(language amqp.RabbitMQMessage_Language, url string) {
 			defer wg.Done()
-			service.checkFeeds(language, url)
+			service.checkFeed(language, url)
 		}(language, url)
 	}
 
 	wg.Wait()
 }
 
-func (service *RSSService) checkFeeds(language amqp.RabbitMQMessage_Language, url string) {
-	log.Info().
-		Interface(models.LogLanguage, language).
-		Str(models.LogUrl, url).
-		Msgf("Reading feed source...")
-
-	ctx, cancel := context.WithTimeout(context.Background(), service.timeout)
-	defer cancel()
-
-	feed, err := service.feedParser.ParseURLWithContext(url, ctx)
+func (service *RSSService) checkFeed(language amqp.RabbitMQMessage_Language, url string) {
+	log.Info().Interface(models.LogLanguage, language).Str(models.LogUrl, url).Msgf("Reading feed source...")
+	feed, err := service.readFeed(url)
 	if err != nil {
-		log.Error().Err(err).
-			Interface(models.LogLanguage, language).
-			Str(models.LogUrl, url).
-			Msgf("Cannot parse URL, source ignored")
+		log.Error().Err(err).Interface(models.LogLanguage, language).Str(models.LogUrl, url).Msgf("Cannot parse URL, source ignored")
 		return
 	}
 
@@ -69,8 +59,7 @@ func (service *RSSService) checkFeeds(language amqp.RabbitMQMessage_Language, ur
 		// TODO retrieve new items compared to last time (database access)
 		currentFeed := feed.Items[i]
 		if currentFeed.PublishedParsed != nil && currentFeed.PublishedParsed.UTC().After(time.Time{}) {
-			msg := models.MapFeed(currentFeed, language)
-			err := service.broker.Publish(msg, "news", "news.rss", currentFeed.GUID)
+			err := service.publishFeedItem(currentFeed, feed.Copyright, language)
 			if err != nil {
 				log.Error().Err(err).Msgf("Impossible to publish RSS feed, breaking loop")
 				break
@@ -79,8 +68,16 @@ func (service *RSSService) checkFeeds(language amqp.RabbitMQMessage_Language, ur
 		}
 	}
 
-	log.Info().
-		Interface(models.LogLanguage, language).
-		Int(models.LogFeedNumber, publishedFeeds).
-		Msgf("Feed(s) read and published")
+	log.Info().Interface(models.LogLanguage, language).Int(models.LogFeedNumber, publishedFeeds).Msgf("Feed(s) read and published")
+}
+
+func (service *RSSService) readFeed(url string) (*gofeed.Feed, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), service.timeout)
+	defer cancel()
+	return service.feedParser.ParseURLWithContext(url, ctx)
+}
+
+func (service *RSSService) publishFeedItem(item *gofeed.Item, source string, language amqp.RabbitMQMessage_Language) error {
+	msg := models.MapFeedItem(item, source, language)
+	return service.broker.Publish(msg, "news", "news.rss", item.GUID)
 }
