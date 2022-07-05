@@ -6,9 +6,13 @@ type RSSServiceMock struct {
 	CheckFeedsFunc func()
 }
 
+func NewMock() *RSSServiceMock {
+	return &RSSServiceMock{}
+}
+
 func (mock *RSSServiceMock) CheckFeeds() {
 	if mock.CheckFeedsFunc != nil {
-		mock.CheckFeeds()
+		mock.CheckFeedsFunc()
 		return
 	}
 

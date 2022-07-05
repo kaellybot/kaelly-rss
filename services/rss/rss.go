@@ -35,22 +35,29 @@ func (service *RSSService) CheckFeeds() {
 	log.Info().Msgf("Checking feeds...")
 
 	var wg sync.WaitGroup
-	for language, url := range models.RSSUrls {
+	for _, feedSource := range models.FeedSources {
 		wg.Add(1)
-		go func(language amqp.RabbitMQMessage_Language, url string) {
+		go func(feedSource models.FeedSource) {
 			defer wg.Done()
-			service.checkFeed(language, url)
-		}(language, url)
+			service.checkFeed(feedSource)
+		}(feedSource)
 	}
 
 	wg.Wait()
 }
 
-func (service *RSSService) checkFeed(language amqp.RabbitMQMessage_Language, url string) {
-	log.Info().Interface(models.LogLanguage, language).Str(models.LogUrl, url).Msgf("Reading feed source...")
-	feed, err := service.readFeed(url)
+func (service *RSSService) checkFeed(source models.FeedSource) {
+	log.Info().
+		Str(models.LogLanguage, source.Language.String()).
+		Str(models.LogUrl, source.Url).
+		Msgf("Reading feed source...")
+	feed, err := service.readFeed(source.Url)
 	if err != nil {
-		log.Error().Err(err).Interface(models.LogLanguage, language).Str(models.LogUrl, url).Msgf("Cannot parse URL, source ignored")
+		log.Error().
+			Err(err).
+			Str(models.LogLanguage, source.Language.String()).
+			Str(models.LogUrl, source.Url).
+			Msgf("Cannot parse URL, source ignored")
 		return
 	}
 
@@ -59,7 +66,7 @@ func (service *RSSService) checkFeed(language amqp.RabbitMQMessage_Language, url
 		// TODO retrieve new items compared to last time (database access)
 		currentFeed := feed.Items[i]
 		if currentFeed.PublishedParsed != nil && currentFeed.PublishedParsed.UTC().After(time.Time{}) {
-			err := service.publishFeedItem(currentFeed, feed.Copyright, language)
+			err := service.publishFeedItem(currentFeed, feed.Copyright, source.Language)
 			if err != nil {
 				log.Error().Err(err).Msgf("Impossible to publish RSS feed, breaking loop")
 				break
@@ -68,7 +75,11 @@ func (service *RSSService) checkFeed(language amqp.RabbitMQMessage_Language, url
 		}
 	}
 
-	log.Info().Interface(models.LogLanguage, language).Int(models.LogFeedNumber, publishedFeeds).Msgf("Feed(s) read and published")
+	log.Info().
+		Str(models.LogLanguage, source.Language.String()).
+		Str(models.LogUrl, source.Url).
+		Int(models.LogFeedNumber, publishedFeeds).
+		Msgf("Feed(s) read and published")
 }
 
 func (service *RSSService) readFeed(url string) (*gofeed.Feed, error) {
