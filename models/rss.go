@@ -10,7 +10,7 @@ import (
 
 type FeedSource struct {
 	Type     FeedSourceType
-	Language amqp.RabbitMQMessage_Language
+	Language amqp.Language
 	Url      string
 }
 
@@ -26,47 +26,47 @@ var (
 	FeedSources = []FeedSource{
 		{
 			Type:     Changelog,
-			Language: amqp.RabbitMQMessage_FR,
+			Language: amqp.Language_FR,
 			Url:      "https://www.dofus.com/fr/rss/changelog.xml",
 		},
 		{
 			Type:     Devblog,
-			Language: amqp.RabbitMQMessage_FR,
+			Language: amqp.Language_FR,
 			Url:      "https://www.dofus.com/fr/rss/devblog.xml",
 		},
 		{
 			Type:     News,
-			Language: amqp.RabbitMQMessage_FR,
+			Language: amqp.Language_FR,
 			Url:      "https://www.dofus.com/fr/rss/news.xml",
 		},
 		{
 			Type:     Changelog,
-			Language: amqp.RabbitMQMessage_EN,
+			Language: amqp.Language_EN,
 			Url:      "https://www.dofus.com/en/rss/changelog.xml",
 		},
 		{
 			Type:     Devblog,
-			Language: amqp.RabbitMQMessage_EN,
+			Language: amqp.Language_EN,
 			Url:      "https://www.dofus.com/en/rss/devblog.xml",
 		},
 		{
 			Type:     News,
-			Language: amqp.RabbitMQMessage_EN,
+			Language: amqp.Language_EN,
 			Url:      "https://www.dofus.com/en/rss/news.xml",
 		},
 		{
 			Type:     Changelog,
-			Language: amqp.RabbitMQMessage_ES,
+			Language: amqp.Language_ES,
 			Url:      "https://www.dofus.com/es/rss/changelog.xml",
 		},
 		{
 			Type:     Devblog,
-			Language: amqp.RabbitMQMessage_ES,
+			Language: amqp.Language_ES,
 			Url:      "https://www.dofus.com/es/rss/devblog.xml",
 		},
 		{
 			Type:     News,
-			Language: amqp.RabbitMQMessage_ES,
+			Language: amqp.Language_ES,
 			Url:      "https://www.dofus.com/es/rss/news.xml",
 		},
 	}
@@ -74,7 +74,7 @@ var (
 	imageUrlRegex, _ = regexp.Compile("<img.+src=\"(.*\\.jpg)\".+>")
 )
 
-func MapFeedItem(item *gofeed.Item, source string, language amqp.RabbitMQMessage_Language) *amqp.RabbitMQMessage {
+func MapFeedItem(item *gofeed.Item, source string, language amqp.Language) *amqp.RabbitMQMessage {
 	var iconUrl string
 	if item.Image != nil {
 		iconUrl = item.Image.URL

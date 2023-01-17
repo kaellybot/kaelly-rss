@@ -88,7 +88,7 @@ func (service *RSSService) readFeed(url string) (*gofeed.Feed, error) {
 	return service.feedParser.ParseURLWithContext(url, ctx)
 }
 
-func (service *RSSService) publishFeedItem(item *gofeed.Item, source string, language amqp.RabbitMQMessage_Language) error {
+func (service *RSSService) publishFeedItem(item *gofeed.Item, source string, language amqp.Language) error {
 	msg := models.MapFeedItem(item, source, language)
 	return service.broker.Publish(msg, "news", "news.rss", item.GUID)
 }
