@@ -1,22 +1,36 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 
 	"github.com/kaellybot/kaelly-rss/application"
-	"github.com/kaellybot/kaelly-rss/models"
+	"github.com/kaellybot/kaelly-rss/models/constants"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-)
-
-var (
-	rssTimeout      int
-	rabbitMqAddress string
+	"github.com/spf13/viper"
 )
 
 func init() {
-	zerolog.CallerMarshalFunc = func(file string, line int) string {
+	initConfig()
+	initLog()
+}
+
+func initConfig() {
+	viper.SetConfigFile(constants.ConfigFileName)
+
+	for configName, defaultValue := range constants.DefaultConfigValues {
+		viper.SetDefault(configName, defaultValue)
+	}
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		log.Fatal().Err(err).Str(constants.LogFileName, constants.ConfigFileName).Msgf("Failed to read config, shutting down.")
+	}
+}
+
+func initLog() {
+	zerolog.SetGlobalLevel(constants.LogLevelFallback)
+	zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
 		short := file
 		for i := len(file) - 1; i > 0; i-- {
 			if file[i] == '/' {
@@ -24,24 +38,30 @@ func init() {
 				break
 			}
 		}
-		file = short
-		return fmt.Sprintf("%s:%d", file, line)
+		return fmt.Sprintf("%s:%d", short, line)
 	}
 	log.Logger = log.With().Caller().Logger()
 
-	flag.IntVar(&rssTimeout, "rssTimeout", models.RSSParserTimeout, "Timeout to retrieve RSS feeds in seconds")
-	flag.StringVar(&rabbitMqAddress, "rabbitMqAddress", models.RabbitMqAddress, "RabbitMQ address")
-	flag.Parse()
+	logLevel, err := zerolog.ParseLevel(viper.GetString(constants.LogLevel))
+	if err != nil {
+		log.Warn().Err(err).Msgf("Log level not set, continue with %s...", constants.LogLevelFallback)
+	} else {
+		zerolog.SetGlobalLevel(logLevel)
+		log.Debug().Msgf("Logger level set to '%s'", logLevel)
+	}
 }
 
 func main() {
-	app, err := application.New(models.RabbitMqClientId, rabbitMqAddress, rssTimeout)
+	app, err := application.New()
 	if err != nil {
-		log.Fatal().Err(err).Msgf("Shutting down after failing to instanciate application")
+		log.Fatal().Err(err).Msgf("Shutting down after failing to instantiate application")
 	}
 
 	app.Run()
+	if err != nil {
+		log.Fatal().Err(err).Msgf("Shutting down after failing to run application")
+	}
 
-	log.Info().Msgf("Gracefully shutting down %s...", models.Name)
+	log.Info().Msgf("Gracefully shutting down %s...", constants.InternalName)
 	app.Shutdown()
 }

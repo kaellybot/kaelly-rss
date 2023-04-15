@@ -7,32 +7,30 @@ import (
 
 	amqp "github.com/kaellybot/kaelly-amqp"
 	"github.com/kaellybot/kaelly-rss/models"
+	"github.com/kaellybot/kaelly-rss/models/constants"
+	"github.com/kaellybot/kaelly-rss/repositories/feedsources"
 	"github.com/mmcdole/gofeed"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 )
 
-type RSSServiceInterface interface {
-	CheckFeeds()
-}
+func New(feedSourceRepo feedsources.FeedSourceRepository,
+	broker amqp.MessageBrokerInterface) (*RSSServiceImpl, error) {
 
-type RSSService struct {
-	broker     amqp.MessageBrokerInterface
-	feedParser *gofeed.Parser
-	timeout    time.Duration
-}
-
-func New(broker amqp.MessageBrokerInterface, timeout int) (*RSSService, error) {
 	fp := gofeed.NewParser()
-	fp.UserAgent = models.RSSParserUserAgent
-	return &RSSService{
-		broker:     broker,
-		feedParser: fp,
-		timeout:    time.Duration(timeout) * time.Second,
+	fp.UserAgent = constants.RssUserAgent
+	return &RSSServiceImpl{
+		broker:         broker,
+		feedParser:     fp,
+		timeout:        time.Duration(viper.GetInt(constants.RssTimeout)) * time.Second,
+		feedSourceRepo: feedSourceRepo,
 	}, nil
 }
 
-func (service *RSSService) CheckFeeds() {
+func (service *RSSServiceImpl) DispatchNewFeeds() error {
 	log.Info().Msgf("Checking feeds...")
+
+	// TODO retrieve feedSources from repo
 
 	var wg sync.WaitGroup
 	for _, feedSource := range models.FeedSources {
@@ -44,19 +42,20 @@ func (service *RSSService) CheckFeeds() {
 	}
 
 	wg.Wait()
+	return nil
 }
 
-func (service *RSSService) checkFeed(source models.FeedSource) {
+func (service *RSSServiceImpl) checkFeed(source models.FeedSource) {
 	log.Info().
-		Str(models.LogLanguage, source.Language.String()).
-		Str(models.LogUrl, source.Url).
+		Str(constants.LogLanguage, source.Language.String()).
+		Str(constants.LogUrl, source.Url).
 		Msgf("Reading feed source...")
 	feed, err := service.readFeed(source.Url)
 	if err != nil {
 		log.Error().
 			Err(err).
-			Str(models.LogLanguage, source.Language.String()).
-			Str(models.LogUrl, source.Url).
+			Str(constants.LogLanguage, source.Language.String()).
+			Str(constants.LogUrl, source.Url).
 			Msgf("Cannot parse URL, source ignored")
 		return
 	}
@@ -76,19 +75,19 @@ func (service *RSSService) checkFeed(source models.FeedSource) {
 	}
 
 	log.Info().
-		Str(models.LogLanguage, source.Language.String()).
-		Str(models.LogUrl, source.Url).
-		Int(models.LogFeedNumber, publishedFeeds).
+		Str(constants.LogLanguage, source.Language.String()).
+		Str(constants.LogUrl, source.Url).
+		Int(constants.LogFeedNumber, publishedFeeds).
 		Msgf("Feed(s) read and published")
 }
 
-func (service *RSSService) readFeed(url string) (*gofeed.Feed, error) {
+func (service *RSSServiceImpl) readFeed(url string) (*gofeed.Feed, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), service.timeout)
 	defer cancel()
 	return service.feedParser.ParseURLWithContext(url, ctx)
 }
 
-func (service *RSSService) publishFeedItem(item *gofeed.Item, source string, language amqp.Language) error {
+func (service *RSSServiceImpl) publishFeedItem(item *gofeed.Item, source string, language amqp.Language) error {
 	msg := models.MapFeedItem(item, source, language)
 	return service.broker.Publish(msg, "news", "news.rss", item.GUID)
 }

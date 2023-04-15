@@ -20,6 +20,7 @@ const (
 	Changelog FeedSourceType = "changelog"
 	Devblog   FeedSourceType = "devblog"
 	News      FeedSourceType = "news"
+	// store in AMQP
 )
 
 var (

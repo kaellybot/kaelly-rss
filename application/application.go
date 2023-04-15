@@ -2,28 +2,40 @@ package application
 
 import (
 	amqp "github.com/kaellybot/kaelly-amqp"
+	"github.com/kaellybot/kaelly-rss/models/constants"
+	"github.com/kaellybot/kaelly-rss/repositories/feedsources"
 	"github.com/kaellybot/kaelly-rss/services/rss"
+	"github.com/kaellybot/kaelly-rss/utils/databases"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 )
 
-func New(rabbitMqClientId, rabbitMqAddress string, rssTimeout int) (*Application, error) {
-	broker, err := amqp.New(rabbitMqClientId, rabbitMqAddress, []amqp.Binding{})
+func New() (*Application, error) {
+	// misc
+	db, err := databases.New()
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to instanciate broker")
-		return nil, ErrCannotInstanciateApp
+		return nil, err
 	}
 
-	rss, err := rss.New(broker, rssTimeout)
+	broker, err := amqp.New(constants.RabbitMQClientId, viper.GetString(constants.RabbitMqAddress), nil)
 	if err != nil {
-		log.Error().Err(err).Msgf("RSS service instanciation failed")
-		return nil, ErrCannotInstanciateApp
+		return nil, err
+	}
+
+	// repositories
+	feedSourcesRepo := feedsources.New(db)
+
+	// services
+	rss, err := rss.New(feedSourcesRepo, broker)
+	if err != nil {
+		return nil, err
 	}
 
 	return &Application{rss: rss, broker: broker}, nil
 }
 
-func (app *Application) Run() {
-	app.rss.CheckFeeds()
+func (app *Application) Run() error {
+	return app.rss.DispatchNewFeeds()
 }
 
 func (app *Application) Shutdown() {
