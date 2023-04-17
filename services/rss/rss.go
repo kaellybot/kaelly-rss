@@ -73,7 +73,7 @@ func (service *RSSServiceImpl) checkFeed(source entities.FeedSource) {
 	for _, feedItem := range feed.Items {
 		if feedItem.PublishedParsed.UTC().After(lastUpdate.UTC()) {
 
-			err := service.publishFeedItem(feedItem, feed.Copyright, source.Locale)
+			err := service.publishFeedItem(feedItem, feed.Copyright, source.FeedTypeId, source.Locale)
 			if err != nil {
 				log.Error().Err(err).
 					Str(constants.LogCorrelationId, feedItem.GUID).
@@ -125,7 +125,7 @@ func (service *RSSServiceImpl) readFeed(url string) (*gofeed.Feed, error) {
 	return feed, nil
 }
 
-func (service *RSSServiceImpl) publishFeedItem(item *gofeed.Item, source string, language amqp.Language) error {
-	msg := mappers.MapFeedItem(item, source, language)
+func (service *RSSServiceImpl) publishFeedItem(item *gofeed.Item, source, feedType string, language amqp.Language) error {
+	msg := mappers.MapFeedItem(item, source, feedType, language)
 	return service.broker.Publish(msg, amqp.ExchangeNews, routingkey, item.GUID)
 }

@@ -12,7 +12,7 @@ var (
 	imageUrlRegex, _ = regexp.Compile("<img.+src=\"(.*\\.jpg)\".+>")
 )
 
-func MapFeedItem(item *gofeed.Item, source string, language amqp.Language) *amqp.RabbitMQMessage {
+func MapFeedItem(item *gofeed.Item, source, feedType string, language amqp.Language) *amqp.RabbitMQMessage {
 	var iconUrl string
 	if item.Image != nil {
 		iconUrl = item.Image.URL
@@ -29,6 +29,7 @@ func MapFeedItem(item *gofeed.Item, source string, language amqp.Language) *amqp
 			Url:        item.Link,
 			IconUrl:    iconUrl,
 			Date:       timestamppb.New(*item.PublishedParsed),
+			Type:       feedType,
 		},
 	}
 }
