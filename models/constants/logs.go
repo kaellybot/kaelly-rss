@@ -6,7 +6,9 @@ const (
 	LogFileName      = "fileName"
 	LogCorrelationId = "correlationId"
 	LogLanguage      = "language"
-	LogUrl           = "url"
+	LogFeedUrl       = "feedUrl"
+	LogFeedType      = "feedType"
+	LogFeedItemId    = "feedItemId"
 	LogFeedNumber    = "feedNumber"
 	LogLevelFallback = zerolog.InfoLevel
 )

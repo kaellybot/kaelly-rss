@@ -7,7 +7,8 @@ import (
 )
 
 type FeedSource struct {
-	Id         string `gorm:"primaryKey"`
-	Language   amqp.Language
-	LastUpdate time.Time
+	FeedTypeId string        `gorm:"primaryKey"`
+	Url        string        `gorm:"primaryKey"`
+	Locale     amqp.Language `gorm:"primaryKey"`
+	LastUpdate time.Time     `gorm:"not null; default:current_timestamp"`
 }

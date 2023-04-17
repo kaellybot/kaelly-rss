@@ -8,6 +8,10 @@ import (
 	"github.com/mmcdole/gofeed"
 )
 
+const (
+	routingkey = "news.rss"
+)
+
 type RSSService interface {
 	DispatchNewFeeds() error
 }
