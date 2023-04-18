@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/kaellybot/kaelly-rss/application"
 	"github.com/kaellybot/kaelly-rss/models/constants"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -13,6 +15,7 @@ import (
 func init() {
 	initConfig()
 	initLog()
+	initMetrics()
 }
 
 func initConfig() {
@@ -49,6 +52,11 @@ func initLog() {
 		zerolog.SetGlobalLevel(logLevel)
 		log.Debug().Msgf("Logger level set to '%s'", logLevel)
 	}
+}
+
+func initMetrics() {
+	http.Handle("/metrics", promhttp.Handler())
+	go http.ListenAndServe(fmt.Sprintf(":%v", viper.GetInt(constants.MetricPort)), nil)
 }
 
 func main() {
