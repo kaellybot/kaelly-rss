@@ -56,7 +56,13 @@ func initLog() {
 
 func initMetrics() {
 	http.Handle("/metrics", promhttp.Handler())
-	go http.ListenAndServe(fmt.Sprintf(":%v", viper.GetInt(constants.MetricPort)), nil)
+	go func() {
+		log.Info().Msgf("Exposing Prometheus metrics...")
+		err := http.ListenAndServe(fmt.Sprintf(":%v", viper.GetInt(constants.MetricPort)), nil)
+		if err != nil {
+			log.Error().Err(err).Msgf("Cannot listen and serve Prometheus metrics")
+		}
+	}()
 }
 
 func main() {
