@@ -2,10 +2,10 @@ module github.com/kaellybot/kaelly-rss
 
 go 1.18
 
-replace github.com/kaellybot/kaelly-amqp => /home/kaysoro/git/kaelly-amqp
+// replace github.com/kaellybot/kaelly-amqp => /home/kaysoro/git/kaelly-amqp
 
 require (
-	github.com/kaellybot/kaelly-amqp v0.0.1-beta5
+	github.com/kaellybot/kaelly-amqp v0.0.1-beta6
 	github.com/mmcdole/gofeed v1.1.3
 	github.com/prometheus/client_golang v1.15.0
 	github.com/rs/zerolog v1.28.0
