@@ -1,4 +1,4 @@
-package rss
+package feeds
 
 import (
 	"time"

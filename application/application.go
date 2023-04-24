@@ -4,7 +4,7 @@ import (
 	amqp "github.com/kaellybot/kaelly-amqp"
 	"github.com/kaellybot/kaelly-rss/models/constants"
 	"github.com/kaellybot/kaelly-rss/repositories/feedsources"
-	"github.com/kaellybot/kaelly-rss/services/rss"
+	"github.com/kaellybot/kaelly-rss/services/feeds"
 	"github.com/kaellybot/kaelly-rss/utils/databases"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -26,16 +26,16 @@ func New() (*Application, error) {
 	feedSourcesRepo := feedsources.New(db)
 
 	// services
-	rss, err := rss.New(feedSourcesRepo, broker)
+	feedService, err := feeds.New(feedSourcesRepo, broker)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Application{rss: rss, broker: broker}, nil
+	return &Application{feedService: feedService, broker: broker}, nil
 }
 
 func (app *Application) Run() error {
-	return app.rss.DispatchNewFeeds()
+	return app.feedService.DispatchNewFeeds()
 }
 
 func (app *Application) Shutdown() {

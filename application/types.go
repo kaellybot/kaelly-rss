@@ -2,7 +2,7 @@ package application
 
 import (
 	amqp "github.com/kaellybot/kaelly-amqp"
-	"github.com/kaellybot/kaelly-rss/services/rss"
+	"github.com/kaellybot/kaelly-rss/services/feeds"
 )
 
 type ApplicationInterface interface {
@@ -11,6 +11,6 @@ type ApplicationInterface interface {
 }
 
 type Application struct {
-	rss    rss.RSSService
-	broker amqp.MessageBrokerInterface
+	feedService feeds.RSSService
+	broker      amqp.MessageBrokerInterface
 }
