@@ -5,11 +5,11 @@ import (
 	"github.com/kaellybot/kaelly-rss/utils/databases"
 )
 
-type FeedSourceRepository interface {
+type Repository interface {
 	GetFeedSources() ([]entities.FeedSource, error)
 	Save(feedSource entities.FeedSource) error
 }
 
-type FeedSourceRepositoryImpl struct {
+type Impl struct {
 	db databases.MySQLConnection
 }

@@ -8,16 +8,20 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+const (
+	imageURLRegexExpectedGroup = 2
+)
+
 var (
-	imageUrlRegex, _ = regexp.Compile("<img.+src=\"(.*\\.jpg)\".+>")
+	imageURLRegex = regexp.MustCompile("<img.+src=\"(.*\\.jpg)\".+>")
 )
 
 func MapFeedItem(item *gofeed.Item, source, feedType string, language amqp.Language) *amqp.RabbitMQMessage {
-	var iconUrl string
+	var iconURL string
 	if item.Image != nil {
-		iconUrl = item.Image.URL
-	} else if matches := imageUrlRegex.FindStringSubmatch(item.Description); matches != nil && len(matches) >= 2 {
-		iconUrl = matches[1]
+		iconURL = item.Image.URL
+	} else if matches := imageURLRegex.FindStringSubmatch(item.Description); len(matches) >= imageURLRegexExpectedGroup {
+		iconURL = matches[1]
 	}
 
 	return &amqp.RabbitMQMessage{
@@ -27,7 +31,7 @@ func MapFeedItem(item *gofeed.Item, source, feedType string, language amqp.Langu
 			Title:      item.Title,
 			AuthorName: source,
 			Url:        item.Link,
-			IconUrl:    iconUrl,
+			IconUrl:    iconURL,
 			Date:       timestamppb.New(*item.PublishedParsed),
 			Type:       feedType,
 		},

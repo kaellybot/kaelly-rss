@@ -5,12 +5,12 @@ import (
 	"github.com/kaellybot/kaelly-rss/services/feeds"
 )
 
-type ApplicationInterface interface {
+type Application interface {
 	Run() error
 	Shutdown()
 }
 
-type Application struct {
+type Impl struct {
 	feedService feeds.RSSService
-	broker      amqp.MessageBrokerInterface
+	broker      amqp.MessageBroker
 }

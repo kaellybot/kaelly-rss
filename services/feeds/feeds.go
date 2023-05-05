@@ -16,15 +16,13 @@ import (
 	"github.com/spf13/viper"
 )
 
-func New(feedSourceRepo feedsources.FeedSourceRepository,
-	broker amqp.MessageBrokerInterface) (*RSSServiceImpl, error) {
-
+func New(feedSourceRepo feedsources.Repository, broker amqp.MessageBroker) (*RSSServiceImpl, error) {
 	fp := gofeed.NewParser()
 	fp.UserAgent = constants.RssUserAgent
 	return &RSSServiceImpl{
 		broker:         broker,
 		feedParser:     fp,
-		timeout:        time.Duration(viper.GetInt(constants.RssTimeout)) * time.Second,
+		timeout:        time.Duration(viper.GetInt(constants.RSSTimeout)) * time.Second,
 		feedSourceRepo: feedSourceRepo,
 	}, nil
 }
@@ -53,17 +51,17 @@ func (service *RSSServiceImpl) DispatchNewFeeds() error {
 func (service *RSSServiceImpl) checkFeed(source entities.FeedSource) {
 	log.Info().
 		Str(constants.LogLanguage, source.Locale.String()).
-		Str(constants.LogFeedUrl, source.Url).
-		Str(constants.LogFeedType, source.FeedTypeId).
+		Str(constants.LogFeedURL, source.URL).
+		Str(constants.LogFeedType, source.FeedTypeID).
 		Msgf("Reading feed source...")
 
-	feed, err := service.readFeed(source.Url)
+	feed, err := service.readFeed(source.URL)
 	if err != nil {
 		log.Error().
 			Err(err).
 			Str(constants.LogLanguage, source.Locale.String()).
-			Str(constants.LogFeedType, source.FeedTypeId).
-			Str(constants.LogFeedUrl, source.Url).
+			Str(constants.LogFeedType, source.FeedTypeID).
+			Str(constants.LogFeedURL, source.URL).
 			Msgf("Cannot parse URL, source ignored")
 		return
 	}
@@ -72,15 +70,14 @@ func (service *RSSServiceImpl) checkFeed(source entities.FeedSource) {
 	lastUpdate := source.LastUpdate
 	for _, feedItem := range feed.Items {
 		if feedItem.PublishedParsed.UTC().After(lastUpdate.UTC()) {
-
-			err := service.publishFeedItem(feedItem, feed.Copyright, source.FeedTypeId, source.Locale)
-			if err != nil {
+			errPublish := service.publishFeedItem(feedItem, feed.Copyright, source.FeedTypeID, source.Locale)
+			if errPublish != nil {
 				log.Error().Err(err).
-					Str(constants.LogCorrelationId, feedItem.GUID).
-					Str(constants.LogFeedType, source.FeedTypeId).
-					Str(constants.LogFeedUrl, source.Url).
+					Str(constants.LogCorrelationID, feedItem.GUID).
+					Str(constants.LogFeedType, source.FeedTypeID).
+					Str(constants.LogFeedURL, source.URL).
 					Str(constants.LogLanguage, source.Locale.String()).
-					Str(constants.LogFeedItemId, feedItem.GUID).
+					Str(constants.LogFeedItemID, feedItem.GUID).
 					Msgf("Impossible to publish RSS feed, breaking loop")
 				break
 			}
@@ -89,11 +86,11 @@ func (service *RSSServiceImpl) checkFeed(source entities.FeedSource) {
 			err = service.feedSourceRepo.Save(source)
 			if err != nil {
 				log.Error().Err(err).
-					Str(constants.LogCorrelationId, feedItem.GUID).
-					Str(constants.LogFeedType, source.FeedTypeId).
-					Str(constants.LogFeedUrl, source.Url).
+					Str(constants.LogCorrelationID, feedItem.GUID).
+					Str(constants.LogFeedType, source.FeedTypeID).
+					Str(constants.LogFeedURL, source.URL).
 					Str(constants.LogLanguage, source.Locale.String()).
-					Str(constants.LogFeedItemId, feedItem.GUID).
+					Str(constants.LogFeedItemID, feedItem.GUID).
 					Msgf("Impossible to update feed source, breaking loop; this feed might be published again next time")
 				break
 			}
@@ -104,8 +101,8 @@ func (service *RSSServiceImpl) checkFeed(source entities.FeedSource) {
 
 	log.Info().
 		Str(constants.LogLanguage, source.Locale.String()).
-		Str(constants.LogFeedType, source.FeedTypeId).
-		Str(constants.LogFeedUrl, source.Url).
+		Str(constants.LogFeedType, source.FeedTypeID).
+		Str(constants.LogFeedURL, source.URL).
 		Int(constants.LogFeedNumber, publishedFeeds).
 		Msgf("Feed(s) read and published")
 }
@@ -125,7 +122,8 @@ func (service *RSSServiceImpl) readFeed(url string) (*gofeed.Feed, error) {
 	return feed, nil
 }
 
-func (service *RSSServiceImpl) publishFeedItem(item *gofeed.Item, source, feedType string, language amqp.Language) error {
+func (service *RSSServiceImpl) publishFeedItem(item *gofeed.Item, source,
+	feedType string, language amqp.Language) error {
 	msg := mappers.MapFeedItem(item, source, feedType, language)
 	return service.broker.Publish(msg, amqp.ExchangeNews, routingkey, item.GUID)
 }

@@ -4,11 +4,11 @@ import "github.com/rs/zerolog"
 
 const (
 	LogFileName      = "fileName"
-	LogCorrelationId = "correlationId"
+	LogCorrelationID = "correlationID"
 	LogLanguage      = "language"
-	LogFeedUrl       = "feedUrl"
+	LogFeedURL       = "feedURL"
 	LogFeedType      = "feedType"
-	LogFeedItemId    = "feedItemId"
+	LogFeedItemID    = "feedItemID"
 	LogFeedNumber    = "feedNumber"
 	LogLevelFallback = zerolog.InfoLevel
 )

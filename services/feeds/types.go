@@ -17,8 +17,8 @@ type RSSService interface {
 }
 
 type RSSServiceImpl struct {
-	broker         amqp.MessageBrokerInterface
+	broker         amqp.MessageBroker
 	feedParser     *gofeed.Parser
 	timeout        time.Duration
-	feedSourceRepo feedsources.FeedSourceRepository
+	feedSourceRepo feedsources.Repository
 }

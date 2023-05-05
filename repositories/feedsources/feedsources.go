@@ -5,16 +5,16 @@ import (
 	"github.com/kaellybot/kaelly-rss/utils/databases"
 )
 
-func New(db databases.MySQLConnection) *FeedSourceRepositoryImpl {
-	return &FeedSourceRepositoryImpl{db: db}
+func New(db databases.MySQLConnection) *Impl {
+	return &Impl{db: db}
 }
 
-func (repo *FeedSourceRepositoryImpl) GetFeedSources() ([]entities.FeedSource, error) {
+func (repo *Impl) GetFeedSources() ([]entities.FeedSource, error) {
 	var feedSources []entities.FeedSource
 	response := repo.db.GetDB().Model(&entities.FeedSource{}).Find(&feedSources)
 	return feedSources, response.Error
 }
 
-func (repo *FeedSourceRepositoryImpl) Save(feedSource entities.FeedSource) error {
+func (repo *Impl) Save(feedSource entities.FeedSource) error {
 	return repo.db.GetDB().Save(&feedSource).Error
 }
