@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	amqp "github.com/kaellybot/kaelly-amqp"
+	"github.com/kaellybot/kaelly-rss/models/entities"
 	"github.com/mmcdole/gofeed"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -16,7 +17,7 @@ var (
 	imageURLRegex = regexp.MustCompile("<img.+src=\"(.*\\.jpg)\".+>")
 )
 
-func MapFeedItem(item *gofeed.Item, source, feedType string, language amqp.Language) *amqp.RabbitMQMessage {
+func MapFeedItem(item *gofeed.Item, source string, feedSource entities.FeedSource) *amqp.RabbitMQMessage {
 	var iconURL string
 	if item.Image != nil {
 		iconURL = item.Image.URL
@@ -26,14 +27,15 @@ func MapFeedItem(item *gofeed.Item, source, feedType string, language amqp.Langu
 
 	return &amqp.RabbitMQMessage{
 		Type:     amqp.RabbitMQMessage_NEWS_RSS,
-		Language: language,
+		Game:     feedSource.Game,
+		Language: feedSource.Locale,
 		NewsRSSMessage: &amqp.NewsRSSMessage{
 			Title:      item.Title,
 			AuthorName: source,
 			Url:        item.Link,
 			IconUrl:    iconURL,
 			Date:       timestamppb.New(*item.PublishedParsed),
-			Type:       feedType,
+			Type:       feedSource.FeedTypeID,
 		},
 	}
 }

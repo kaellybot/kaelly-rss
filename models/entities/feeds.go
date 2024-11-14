@@ -9,6 +9,7 @@ import (
 type FeedSource struct {
 	FeedTypeID string        `gorm:"primaryKey"`
 	URL        string        `gorm:"unique"`
+	Game       amqp.Game     `gorm:"primaryKey"`
 	Locale     amqp.Language `gorm:"primaryKey"`
 	LastUpdate time.Time     `gorm:"not null; default:current_timestamp"`
 }
