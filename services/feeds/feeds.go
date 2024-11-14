@@ -125,5 +125,5 @@ func (service *RSSServiceImpl) readFeed(url string) (*gofeed.Feed, error) {
 func (service *RSSServiceImpl) publishFeedItem(item *gofeed.Item, source,
 	feedType string, language amqp.Language) error {
 	msg := mappers.MapFeedItem(item, source, feedType, language)
-	return service.broker.Publish(msg, amqp.ExchangeNews, routingkey, item.GUID)
+	return service.broker.Emit(msg, amqp.ExchangeNews, routingkey, item.GUID)
 }
