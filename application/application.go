@@ -12,12 +12,8 @@ import (
 
 func New() (*Impl, error) {
 	// misc
-	db, err := databases.New()
-	if err != nil {
-		return nil, err
-	}
-
 	broker := amqp.New(constants.RabbitMQClientID, viper.GetString(constants.RabbitMQAddress))
+	db := databases.New()
 
 	// repositories
 	feedSourcesRepo := feedsources.New(db)
@@ -28,10 +24,18 @@ func New() (*Impl, error) {
 		return nil, err
 	}
 
-	return &Impl{feedService: feedService, broker: broker}, nil
+	return &Impl{
+		feedService: feedService,
+		broker:      broker,
+		db:          db,
+	}, nil
 }
 
 func (app *Impl) Run() error {
+	if err := app.db.Run(); err != nil {
+		return err
+	}
+
 	if err := app.broker.Run(); err != nil {
 		return err
 	}
@@ -41,5 +45,6 @@ func (app *Impl) Run() error {
 
 func (app *Impl) Shutdown() {
 	app.broker.Shutdown()
+	app.db.Shutdown()
 	log.Info().Msgf("Application is no longer running")
 }
