@@ -14,7 +14,7 @@ const (
 )
 
 var (
-	imageURLRegex = regexp.MustCompile("<img.+src=\"(.*\\.jpg)\".+>")
+	imageURLRegex = regexp.MustCompile(`<img.+src="(.*\.(jpg|png))".*>`)
 )
 
 func MapFeedItem(item *gofeed.Item, source string, feedSource entities.FeedSource) *amqp.RabbitMQMessage {
