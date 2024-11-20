@@ -5,7 +5,7 @@ go 1.22
 // replace github.com/kaellybot/kaelly-amqp => /home/kaysoro/git/kaelly-amqp
 
 require (
-	github.com/kaellybot/kaelly-amqp v0.0.9-beta5
+	github.com/kaellybot/kaelly-amqp v0.0.9-beta7
 	github.com/mmcdole/gofeed v1.1.3
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/viper v1.19.0

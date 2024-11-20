@@ -30,12 +30,13 @@ func MapFeedItem(item *gofeed.Item, source string, feedSource entities.FeedSourc
 		Game:     feedSource.Game,
 		Language: feedSource.Locale,
 		NewsRSSMessage: &amqp.NewsRSSMessage{
-			Title:      item.Title,
-			AuthorName: source,
-			Url:        item.Link,
-			IconUrl:    iconURL,
-			Date:       timestamppb.New(*item.PublishedParsed),
-			Type:       feedSource.FeedTypeID,
+			Title:       item.Title,
+			Description: item.Description,
+			AuthorName:  source,
+			Url:         item.Link,
+			IconUrl:     iconURL,
+			Date:        timestamppb.New(*item.PublishedParsed),
+			Type:        feedSource.FeedTypeID,
 		},
 	}
 }
