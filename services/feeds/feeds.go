@@ -18,7 +18,7 @@ import (
 
 func New(feedSourceRepo feedsources.Repository, broker amqp.MessageBroker) (*RSSServiceImpl, error) {
 	fp := gofeed.NewParser()
-	fp.UserAgent = constants.RssUserAgent
+	fp.UserAgent = viper.GetString(constants.UserAgent)
 	return &RSSServiceImpl{
 		broker:         broker,
 		feedParser:     fp,

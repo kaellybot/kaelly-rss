@@ -20,6 +20,9 @@ const (
 	// RabbitMQ address.
 	RabbitMQAddress = "RABBITMQ_ADDRESS"
 
+	// User Agent used for feed consumption.
+	UserAgent = "USER_AGENT"
+
 	// Timeout to retrieve feeds in seconds.
 	RSSTimeout = "HTTP_TIMEOUT"
 
@@ -37,6 +40,7 @@ const (
 	defaultMySQLPassword   = ""
 	defaultMySQLDatabase   = "kaellybot"
 	defaultRabbitMQAddress = "amqp://localhost:5672"
+	defaultUserAgent       = ExternalName
 	defaultRSSTimeout      = 60
 	defaultMetricPort      = 2112
 	defaultLogLevel        = zerolog.InfoLevel
@@ -50,6 +54,7 @@ func GetDefaultConfigValues() map[string]any {
 		MySQLPassword:   defaultMySQLPassword,
 		MySQLDatabase:   defaultMySQLDatabase,
 		RabbitMQAddress: defaultRabbitMQAddress,
+		UserAgent:       defaultUserAgent,
 		RSSTimeout:      defaultRSSTimeout,
 		MetricPort:      defaultMetricPort,
 		LogLevel:        defaultLogLevel.String(),
