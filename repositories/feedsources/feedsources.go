@@ -16,5 +16,10 @@ func (repo *Impl) GetFeedSources() ([]entities.FeedSource, error) {
 }
 
 func (repo *Impl) Save(feedSource entities.FeedSource) error {
-	return repo.db.GetDB().Save(&feedSource).Error
+	return repo.db.GetDB().
+		Model(&feedSource).
+		Where("feed_type_id = ? AND game = ? AND locale = ?",
+			feedSource.FeedTypeID, feedSource.Game, feedSource.Locale).
+		Update("last_update", feedSource.LastUpdate).
+		Error
 }

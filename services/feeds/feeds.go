@@ -36,8 +36,8 @@ func (service *RSSServiceImpl) DispatchNewFeeds() error {
 	}
 
 	var wg sync.WaitGroup
+	wg.Add(len(feedSources))
 	for _, feedSource := range feedSources {
-		wg.Add(1)
 		go func(feedSource entities.FeedSource) {
 			defer wg.Done()
 			service.checkFeed(feedSource)
