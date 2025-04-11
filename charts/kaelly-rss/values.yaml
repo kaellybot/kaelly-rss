@@ -22,7 +22,7 @@ secrets:
   RABBITMQ_ADDRESS: "amqp://localhost:5672"
 
 cronjob:
-  schedule: "0 0 * * *"
+  schedule: "*/10 * * * *"
   name: "kaelly-rss"
   image:
     repository: ghcr.io/kaellybot/kaelly-rss
