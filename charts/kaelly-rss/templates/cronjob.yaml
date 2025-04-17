@@ -5,7 +5,7 @@ metadata:
   labels:
     app: {{ .Chart.Name }}
 spec:
-  schedule: "{{ .Values.cronjob.schedule | quote }}"
+  schedule: "{{ .Values.cronjob.schedule }}"
   jobTemplate:
     spec:
       template:
