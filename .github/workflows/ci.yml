@@ -106,13 +106,13 @@ jobs:
               --namespace kaellybot \
               --create-namespace \
               --set cronjob.image.tag="${{ env.image_tag_name }}" \
-              --set cronjob.schedule="*/10 * * * *" \
+              --set cronjob.schedule="${{ secrets.SCHEDULE }}" \
               --set secrets.MYSQL_URL="${{ secrets.MYSQL_URL }}" \
               --set secrets.MYSQL_USER="${{ secrets.MYSQL_USER }}" \
               --set secrets.MYSQL_PASSWORD="${{ secrets.MYSQL_PASSWORD }}" \
               --set secrets.MYSQL_DATABASE="${{ secrets.MYSQL_DATABASE }}" \
               --set secrets.RABBITMQ_ADDRESS="${{ secrets.RABBITMQ_ADDRESS }}" \
-              --set-string configMap.USER_AGENT="test" \
+              --set-string configMap.USER_AGENT="${{ secrets.USER_AGENT }}" \
               --set configMap.METRIC_PORT="${{ secrets.METRIC_PORT }}" \
               --set configMap.LOG_LEVEL="${{ secrets.LOG_LEVEL }}" \
               --set-string configMap.PRODUCTION="${{ secrets.PRODUCTION }}"
