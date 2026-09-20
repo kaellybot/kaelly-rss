@@ -36,8 +36,19 @@ func (service *RSSServiceImpl) DispatchNewFeeds() error {
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(len(feedSources))
 	for _, feedSource := range feedSources {
+		// A source without a game produces news the broker refuses to publish, so
+		// reading it would only waste an HTTP call. Fix the row in database.
+		if feedSource.Game == amqp.Game_ANY_GAME {
+			log.Error().
+				Str(constants.LogFeedType, feedSource.FeedTypeID).
+				Str(constants.LogFeedURL, feedSource.URL).
+				Str(constants.LogLanguage, feedSource.Locale.String()).
+				Msgf("Feed source has no game, source ignored")
+			continue
+		}
+
+		wg.Add(1)
 		go func(feedSource entities.FeedSource) {
 			defer wg.Done()
 			service.checkFeed(feedSource)
@@ -51,6 +62,7 @@ func (service *RSSServiceImpl) DispatchNewFeeds() error {
 func (service *RSSServiceImpl) checkFeed(source entities.FeedSource) {
 	log.Info().
 		Str(constants.LogLanguage, source.Locale.String()).
+		Str(constants.LogGame, source.Game.String()).
 		Str(constants.LogFeedURL, source.URL).
 		Str(constants.LogFeedType, source.FeedTypeID).
 		Msgf("Reading feed source...")
@@ -60,6 +72,7 @@ func (service *RSSServiceImpl) checkFeed(source entities.FeedSource) {
 		log.Error().
 			Err(err).
 			Str(constants.LogLanguage, source.Locale.String()).
+			Str(constants.LogGame, source.Game.String()).
 			Str(constants.LogFeedType, source.FeedTypeID).
 			Str(constants.LogFeedURL, source.URL).
 			Msgf("Cannot parse URL, source ignored")
@@ -72,17 +85,18 @@ func (service *RSSServiceImpl) checkFeed(source entities.FeedSource) {
 		if feedItem.PublishedParsed.UTC().After(lastUpdate.UTC()) {
 			errPublish := service.publishFeedItem(feedItem, feed.Copyright, source)
 			if errPublish != nil {
-				log.Error().Err(err).
+				log.Error().Err(errPublish).
 					Str(constants.LogCorrelationID, feedItem.GUID).
 					Str(constants.LogFeedType, source.FeedTypeID).
 					Str(constants.LogFeedURL, source.URL).
 					Str(constants.LogLanguage, source.Locale.String()).
+					Str(constants.LogGame, source.Game.String()).
 					Str(constants.LogFeedItemID, feedItem.GUID).
 					Msgf("Impossible to publish RSS feed, breaking loop")
 				break
 			}
 
-			source.LastUpdate = feed.PublishedParsed.UTC()
+			source.LastUpdate = feedItem.PublishedParsed.UTC()
 			err = service.feedSourceRepo.Save(source)
 			if err != nil {
 				log.Error().Err(err).
@@ -90,6 +104,7 @@ func (service *RSSServiceImpl) checkFeed(source entities.FeedSource) {
 					Str(constants.LogFeedType, source.FeedTypeID).
 					Str(constants.LogFeedURL, source.URL).
 					Str(constants.LogLanguage, source.Locale.String()).
+					Str(constants.LogGame, source.Game.String()).
 					Str(constants.LogFeedItemID, feedItem.GUID).
 					Msgf("Impossible to update feed source, breaking loop; this feed might be published again next time")
 				break
@@ -101,6 +116,7 @@ func (service *RSSServiceImpl) checkFeed(source entities.FeedSource) {
 
 	log.Info().
 		Str(constants.LogLanguage, source.Locale.String()).
+		Str(constants.LogGame, source.Game.String()).
 		Str(constants.LogFeedType, source.FeedTypeID).
 		Str(constants.LogFeedURL, source.URL).
 		Int(constants.LogFeedNumber, publishedFeeds).
@@ -114,6 +130,20 @@ func (service *RSSServiceImpl) readFeed(url string) (*gofeed.Feed, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	datedItems := make([]*gofeed.Item, 0, len(feed.Items))
+	for _, item := range feed.Items {
+		if item.PublishedParsed == nil {
+			log.Warn().
+				Str(constants.LogFeedURL, url).
+				Str(constants.LogFeedItemID, item.GUID).
+				Msgf("Feed item has no publication date, item ignored")
+			continue
+		}
+
+		datedItems = append(datedItems, item)
+	}
+	feed.Items = datedItems
 
 	sort.SliceStable(feed.Items, func(i, j int) bool {
 		return feed.Items[i].PublishedParsed.Before(*feed.Items[j].PublishedParsed)
